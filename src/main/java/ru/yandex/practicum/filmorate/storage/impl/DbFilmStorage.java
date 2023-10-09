@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.exception.WrongFilmIdException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.storage.EventStorage;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.sql.PreparedStatement;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 public class DbFilmStorage implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
+    private final EventStorage eventStorage;
 
     @Override
     public Film add(Film film) {
@@ -52,7 +54,7 @@ public class DbFilmStorage implements FilmStorage {
         if (film.getLikeIds() != null) {
             likeUpdate(film);
         }
-
+        eventStorage.addFilm(film.getId(), film.getName());
         return film;
     }
 
@@ -81,13 +83,14 @@ public class DbFilmStorage implements FilmStorage {
         if (film.getLikeIds() != null) {
             likeUpdate(film);
         }
-
+        eventStorage.updateFilm(film.getId(), film.getName());
         return film;
     }
 
     @Override
     public Film delete(Film film) {
         jdbcTemplate.update("delete from films where id = ? cascade", film.getId());
+        eventStorage.deleteFilm(film.getId(), film.getName());
         return film;
     }
 

@@ -8,6 +8,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exception.WrongUserIdException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.EventStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.sql.PreparedStatement;
@@ -23,6 +24,7 @@ import java.util.Set;
 public class DbUserStorage implements UserStorage {
 
     private final JdbcTemplate jdbcTemplate;
+    private final EventStorage eventStorage;
 
     @Override
     public User add(User user) {
@@ -46,6 +48,7 @@ public class DbUserStorage implements UserStorage {
                     keyHolder.getKey().longValue(),
                     friendId));
         }
+        eventStorage.addUser(user.getId(), user.getLogin());
         return user;
     }
 
@@ -69,12 +72,14 @@ public class DbUserStorage implements UserStorage {
                     user.getId(),
                     friendId));
         }
+        eventStorage.updateUser(user.getId(), user.getLogin());
         return user;
     }
 
     @Override
     public User delete(User user) {
         jdbcTemplate.update("delete from users where id = ? cascade", user.getId());
+        eventStorage.deleteUser(user.getId(), user.getLogin());
         return user;
     }
 
