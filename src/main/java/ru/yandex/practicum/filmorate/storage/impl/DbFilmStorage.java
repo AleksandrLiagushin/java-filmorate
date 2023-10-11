@@ -96,9 +96,12 @@ public class DbFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Film delete(Film film) {
-        jdbcTemplate.update("delete from films where id = ?", film.getId());
-        return film;
+    public void delete(long id) {
+        if (id <= 0) {
+            throw new WrongFilmIdException("Film id must be more than 0");
+        }
+
+        jdbcTemplate.update("delete from films where id = ?", id);
     }
 
     @Override

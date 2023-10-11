@@ -9,7 +9,6 @@ import ru.yandex.practicum.filmorate.exception.WrongUserIdException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.DirectorStorage;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.LikeStorage;
 
 import java.time.LocalDate;
@@ -22,7 +21,6 @@ public class FilmService {
     private static final LocalDate EARLIEST_FILM_RELEASE = LocalDate.of(1895, 12, 5);
     private final FilmStorage filmStorage;
     private final LikeStorage likeStorage;
-    private final GenreStorage genreStorage;
     private final DirectorStorage directorStorage;
 
     public Film addFilm(Film film) {
@@ -101,5 +99,9 @@ public class FilmService {
 
     private boolean isIncorrectId(long id) {
         return id <= 0;
+    }
+
+    public void deleteFilm(long id) {
+        filmStorage.delete(id);
     }
 }

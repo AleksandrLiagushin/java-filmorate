@@ -37,13 +37,6 @@ public class DbUserStorage implements UserStorage {
         }, keyHolder);
         user.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
 
-//        Set<Long> friends = user.getFriends();
-//        if (friends != null) {
-//            friends.forEach(friendId -> jdbcTemplate.update(
-//                    "insert into friends (user_id, friend_id) values (?, ?)",
-//                    keyHolder.getKey().longValue(),
-//                    friendId));
-//        }
         return user;
     }
 
@@ -59,21 +52,13 @@ public class DbUserStorage implements UserStorage {
         if (userFound == 0) {
             throw new WrongUserIdException("No user with id = " + user.getId() + " in DB was found.");
         }
-//        jdbcTemplate.update("delete from friends where user_id = ?", user.getId());
-//        Set<Long> friends = user.getFriends();
-//        if (friends != null) {
-//            friends.forEach(friendId -> jdbcTemplate.update(
-//                    "insert into friends (user_id, friend_id) values (?, ?)",
-//                    user.getId(),
-//                    friendId));
-//        }
+
         return user;
     }
 
     @Override
-    public User delete(User user) {
-        jdbcTemplate.update("delete from users where id = ? cascade", user.getId());
-        return user;
+    public void delete(long id) {
+        jdbcTemplate.update("delete from users where id = ?", id);
     }
 
     @Override
@@ -104,20 +89,12 @@ public class DbUserStorage implements UserStorage {
     }
 
     private User mapper(ResultSet resultSet, int rowNum) throws SQLException {
-
-//        Set<Long> friendIds = new HashSet<>(jdbcTemplate.query(
-//                "select friend_id from friends where user_id = ?",
-//                (resultSetLike, rowNumLike) -> resultSetLike.getLong(1),
-//                resultSet.getLong(1)
-//        ));
-
         return User.builder()
                 .id(resultSet.getLong("id"))
                 .name(resultSet.getString("name"))
                 .login(resultSet.getString("login"))
                 .email(resultSet.getString("email"))
                 .birthday(resultSet.getDate("birthday").toLocalDate())
-//                .friends(friendIds)
                 .build();
     }
 }

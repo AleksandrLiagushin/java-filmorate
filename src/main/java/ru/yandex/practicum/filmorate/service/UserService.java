@@ -48,9 +48,12 @@ public class UserService {
         return userStorage.getAll();
     }
 
-    public User delete(User user) {
-        userStorage.delete(user);
-        return user;
+    public void delete(long id) {
+        if (isIncorrectId(id)) {
+            throw new WrongUserIdException("Bad user id = " + id + ". Must be more than 0");
+        }
+
+        userStorage.delete(id);
     }
 
     public void addFriend(long userId, long friendId) {
@@ -100,6 +103,10 @@ public class UserService {
                 || user.getBirthday().isAfter(LocalDate.now());
     }
 
+    public void deleteUser(long id) {
+        userStorage.delete(id);
+    }
+
     private void changeNameToLogin(User user) {
         if (user.getName() == null || user.getName().isEmpty() || user.getName().isBlank()) {
             log.info("Changed user name to user login");
@@ -110,5 +117,4 @@ public class UserService {
     private boolean isIncorrectId(long id) {
         return id <= 0;
     }
-
 }

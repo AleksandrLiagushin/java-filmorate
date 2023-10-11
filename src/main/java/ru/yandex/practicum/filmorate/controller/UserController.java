@@ -70,4 +70,10 @@ public class UserController {
         log.info("Requested delete friend with id {} from user {}", friendId, id);
         userService.deleteFriend(id, friendId);
     }
+
+    @DeleteMapping("/{id}")
+    public void deleteUser(@PathVariable long id) {
+        log.info("Requested delete user wth id {}", id);
+        userService.deleteUser(id);
+    }
 }
