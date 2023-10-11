@@ -109,6 +109,13 @@ public class DbFilmStorage implements FilmStorage {
                 count);
     }
 
+    @Override
+    public List<Film> getCommonFilms(long userId, long friendId) {
+       return jdbcTemplate.query("SELECT f.* " +
+               "FROM films f join film_like fl ON f.id = fl.film_id " +
+               "where USER_id in (?, ?) group by f.id", this::mapper, userId, friendId);
+    }
+
     private Film mapper(ResultSet resultSet, int rowNum) {
         try {
             Mpa mpa = jdbcTemplate.queryForObject(

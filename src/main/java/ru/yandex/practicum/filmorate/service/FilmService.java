@@ -94,6 +94,13 @@ public class FilmService {
         return films;
     }
 
+    public List<Film> getCommonFilms(long userId, long friendId) {
+        if (isIncorrectId(userId) || isIncorrectId(friendId)) {
+            throw new WrongUserIdException("Param must be more then 0");
+        }
+       return filmStorage.getCommonFilms(userId, friendId);
+    }
+
     private boolean isNotValid(Film film) {
         return film.getReleaseDate().isBefore(EARLIEST_FILM_RELEASE);
     }

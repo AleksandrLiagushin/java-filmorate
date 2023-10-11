@@ -68,4 +68,8 @@ public class FilmController {
         filmService.deleteLike(userId, id);
     }
 
+    @GetMapping("/common")
+    public List<Film> getCommonFilms(@RequestParam("userId") long userId, @RequestParam("friendId") long friendId) {
+       return filmService.getCommonFilms(userId, friendId);
+    }
 }
