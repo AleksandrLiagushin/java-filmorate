@@ -64,6 +64,7 @@ public class DbUserStorage implements UserStorage {
     @Override
     public User getById(Long userID) {
         String sqlQuery = "select id, name, login, email, birthday from users where id=?";
+
         try {
             return jdbcTemplate.queryForObject(sqlQuery, this::mapper, userID);
         } catch (EmptyResultDataAccessException e) {
