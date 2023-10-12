@@ -15,10 +15,10 @@ import ru.yandex.practicum.filmorate.storage.FriendStorage;
 import ru.yandex.practicum.filmorate.storage.LikeStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -143,18 +143,14 @@ public class UserService {
         List<Film> recommendedFilms = new ArrayList<>();
 
         for (User u : commonUsers) {
-            String sqlLikes = "select film_id from film_like where user_id = ?";
-            List<Long> filmIds = jdbcTemplate.query(sqlLikes,
-                    (rs, rowNum) -> rs.getLong("film_id"),
-                    u.getId());
-            for (Long filmId : filmIds) {
-                if (!likedFilms.contains(filmId)) {
-                    recommendedFilms.add(filmStorage.getById(filmId));
-                }
-            }
+            String sqlLikes = "select film_id from film_like where user_id = ? and film_id not in (" + likedFilms
+                    .stream()
+                    .map(Object::toString)
+                    .collect(Collectors.joining(",")) + ")";
+            recommendedFilms.addAll(jdbcTemplate.query(sqlLikes, this::mapper, u.getId()));
         }
 
-        return recommendedFilms;
+        return new ArrayList<>(new HashSet<>(recommendedFilms));
     }
 
     private Set<Long> getCommonFilmLikes(User user, User anotherUser) {
@@ -177,6 +173,10 @@ public class UserService {
 
     private boolean isIncorrectId(long id) {
         return id <= 0;
+    }
+
+    private Film mapper(ResultSet resultSet, int rowNum) throws SQLException {
+        return filmStorage.getById(resultSet.getLong("film_id"));
     }
 
 }
