@@ -140,7 +140,7 @@ public class DbFilmStorage implements FilmStorage {
 
     @Override
     public List<Film> getPopular(int count, Optional<Integer> genreId, Optional<String> year)  {
-        if (count <=0) {
+        if (count <= 0) {
             count = DEFAULT_FILMS_COUNT;
         }
         return jdbcTemplate.query(

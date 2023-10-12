@@ -4,8 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-
-
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.User;
@@ -15,7 +13,6 @@ import ru.yandex.practicum.filmorate.storage.FriendStorage;
 import ru.yandex.practicum.filmorate.storage.LikeStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -33,7 +30,8 @@ public class UserService {
     private final JdbcTemplate jdbcTemplate;
 
     public User create(User user) {
-        return userStorage.add(user);
+        userStorage.add(user);
+        return user;
     }
 
     public User update(User user) {
@@ -44,8 +42,9 @@ public class UserService {
         return userStorage.getAll();
     }
 
-    public void delete(Long userId) {
-        userStorage.delete(userId);
+    public void deleteUserById(long id) {
+        userStorage.delete(id);
+    }
 
     public void addFriend(long userId, long friendId) {
         friendStorage.addFriend(userId, friendId);
@@ -109,7 +108,7 @@ public class UserService {
                 }
             }
         }
-      
+
         return recommendedFilms;
     }
 

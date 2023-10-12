@@ -23,7 +23,6 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @Slf4j
 public class DbUserStorage implements UserStorage {
-
     private final JdbcTemplate jdbcTemplate;
 
     @Override
