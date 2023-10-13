@@ -29,7 +29,7 @@ public class FilmController {
     private final FilmService filmService;
 
     @GetMapping
-    public List<Film> getAllFilms() throws SQLException {
+    public List<Film> getAllFilms() {
         log.info("Requested all films");
         return filmService.getAllFilms();
     }
