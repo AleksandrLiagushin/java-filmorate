@@ -32,7 +32,7 @@ CREATE TABLE film_genre (
     PRIMARY KEY (film_id, genre_id)
 );
 
-CREATE TABLE film_like (
+CREATE TABLE film_mark (
     film_id int NOT NULL,
     user_id int NOT NULL,
     mark int NOT NULL,
