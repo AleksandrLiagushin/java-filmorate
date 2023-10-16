@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.WrongFilmIdException;
+import ru.yandex.practicum.filmorate.exception.WrongIdException;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.GenreStorage;
 
@@ -32,7 +32,7 @@ public class DbGenreStorage implements GenreStorage {
                     "select * from genres where id = ?",
                     this::mapper, id);
         } catch (EmptyResultDataAccessException e) {
-            throw new WrongFilmIdException("No such genre in DB with id = " + id + " was found.");
+            throw new WrongIdException("No such genre in DB with id = " + id + " was found.");
         }
     }
 

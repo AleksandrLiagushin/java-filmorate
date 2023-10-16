@@ -30,7 +30,6 @@ public class DbFeedStorage implements FeedStorage {
 
     private void addFeed(Feed.Operation operation, Feed.EventType eventType, long userId, long entityId) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
-        log.info("addFeed.Start");
         jdbcTemplate.update(connection -> {
             PreparedStatement stmt = connection.prepareStatement(INSERT_SQL, new String[]{"id"});
             stmt.setLong(1, Instant.now().toEpochMilli());
@@ -41,10 +40,9 @@ public class DbFeedStorage implements FeedStorage {
             return stmt;
         }, keyHolder);
         if (keyHolder.getKey() != null) {
-            log.info("Произошло событие {} {}.{} для пользователя {} с объектом {}.",
-                    Objects.requireNonNull(keyHolder.getKey()).longValue(), operation, eventType, userId, entityId);
+            log.info("User {} has got an event {} {}.{} with object {}.",
+                    userId, Objects.requireNonNull(keyHolder.getKey()).longValue(), operation, eventType, entityId);
         }
-        log.info("addFeed.Finish");
     }
 
     @Override

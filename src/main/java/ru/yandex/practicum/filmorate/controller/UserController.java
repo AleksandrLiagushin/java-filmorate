@@ -33,7 +33,7 @@ public class UserController {
 
     @GetMapping("/{id}")
     public User getById(@PathVariable long id) {
-        log.info("Requested user with {} id", id);
+        log.info("Requested user {}", id);
         return userService.getById(id);
     }
 
@@ -51,37 +51,37 @@ public class UserController {
 
     @PostMapping
     public User post(@Valid @RequestBody User user) {
-        log.info("Requested create new user {}", user);
+        log.info("Requested creation of user");
         return userService.create(user);
     }
 
     @PutMapping
     public User update(@Valid @RequestBody User user) {
-        log.info("Requested update user {}", user);
+        log.info("Requested change of user");
         return userService.update(user);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
     public void addFriend(@PathVariable long id, @PathVariable long friendId) {
-        log.info("Requested add friend with id {} to user {}", friendId, id);
+        log.info("Requested creation of friend {} to user {}", friendId, id);
         userService.addFriend(id, friendId);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
     public void deleteFriend(@PathVariable long id, @PathVariable long friendId) {
-        log.info("Delete friend with id {} from user {}", friendId, id);
+        log.info("Requested deletion of friend {} from user {}", friendId, id);
         userService.deleteFriend(id, friendId);
     }
 
     @PostMapping("/{id}/friends/{friendId}")
     public void acceptFriendRequest(@PathVariable long id, @PathVariable long friendId) {
-        log.info("Accept requested friend with id {} from user {}", friendId, id);
+        log.info("Accept request for friendship with user {} from user {}", friendId, id);
         userService.updateFriendRequest(id, friendId);
     }
 
     @GetMapping("/{id}/feed")
     public List<Feed> getEventsList(@PathVariable long id) {
-        log.info("Requested feed for user id {}", id);
+        log.info("Get events for user {}", id);
         return userService.getEventsList(id);
     }
 

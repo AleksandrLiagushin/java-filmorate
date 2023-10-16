@@ -6,12 +6,12 @@ import lombok.Data;
 @Data
 @Builder
 public class Feed {
-    private long eventId;
-    private long timestamp;
-    private EventType eventType;
-    private Operation operation;
-    private long userId;
-    private long entityId;
+    private final long eventId;
+    private final long timestamp;
+    private final EventType eventType;
+    private final Operation operation;
+    private final long userId;
+    private final long entityId;
 
     public enum EventType {
         LIKE,

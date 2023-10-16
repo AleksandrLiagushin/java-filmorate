@@ -9,7 +9,7 @@ public interface UserStorage {
 
     User update(User user);
 
-    void delete(long id);
+    void delete(Long userId);
 
     User getById(Long userID);
 
@@ -17,4 +17,5 @@ public interface UserStorage {
 
     List<User> getCommonFriendsByUserId(long userId, long otherId);
 
+    List<User> getFriendsByUserId(long userId);
 }

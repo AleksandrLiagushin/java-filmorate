@@ -1,13 +1,13 @@
 package ru.yandex.practicum.filmorate.storage.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.WrongDirectorIdException;
-import ru.yandex.practicum.filmorate.exception.WrongFilmIdException;
+import ru.yandex.practicum.filmorate.exception.WrongIdException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.storage.DirectorStorage;
 
@@ -17,6 +17,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class DbDirectorStorage implements DirectorStorage {
@@ -28,7 +29,7 @@ public class DbDirectorStorage implements DirectorStorage {
             return jdbcTemplate.queryForObject("SELECT * FROM directors WHERE id = ?",
                     (rs, RowNum) -> new Director(rs.getInt("id"), rs.getString("name")), id);
         } catch (EmptyResultDataAccessException e) {
-            throw new WrongDirectorIdException("There is no director in DB with id = " + id);
+            throw new WrongIdException("There is no director in DB with id = " + id);
         }
     }
 
@@ -42,6 +43,7 @@ public class DbDirectorStorage implements DirectorStorage {
             statement.setString(1, director.getName());
             return statement;
         }, keyHolder);
+        log.info("Director {} added", Objects.requireNonNull(keyHolder.getKey()).intValue());
         return getDirectorById(Objects.requireNonNull(keyHolder.getKey()).intValue());
     }
 
@@ -58,21 +60,28 @@ public class DbDirectorStorage implements DirectorStorage {
                 director.getId());
 
         if (response == 0) {
-            throw new WrongDirectorIdException("No such director in DB with id = " + director.getId() +
+            throw new WrongIdException("No such director in DB with id = " + director.getId() +
                     " was found. Update failed");
         }
 
+        log.info("Director {} updated", director.getId());
         return getDirectorById(director.getId());
     }
 
     @Override
     public long deleteDirector(long id) {
+        if (isIncorrectId(id))  {
+            throw new WrongIdException("Param must be more then 0");
+        }
         jdbcTemplate.update("DELETE FROM directors WHERE id = ?", id);
         return id;
     }
 
     @Override
     public List<Director> getByFilmId(long filmId) {
+        if (isIncorrectId(filmId))  {
+            throw new WrongIdException("Param must be more then 0");
+        }
         return jdbcTemplate.query(
                 "SELECT * FROM directors WHERE id IN (SELECT director_id FROM film_director WHERE film_id = ?)",
                 (rs, RowNum) -> mapper(rs),
@@ -83,7 +92,11 @@ public class DbDirectorStorage implements DirectorStorage {
         try {
             return new Director(resultSet.getInt("id"), resultSet.getString("name"));
         } catch (SQLException e) {
-            throw new WrongFilmIdException("Can't unwrap director from DB response");
+            throw new WrongIdException("Can't unwrap director from DB response");
         }
+    }
+
+    private boolean isIncorrectId(long id) {
+        return id <= 0;
     }
 }

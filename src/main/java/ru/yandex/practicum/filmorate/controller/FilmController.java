@@ -16,17 +16,20 @@ import ru.yandex.practicum.filmorate.service.FilmService;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @RestController
 @RequestMapping("/films")
 @RequiredArgsConstructor
 public class FilmController {
+    private static final int DUMMY_PARAM_VALUE = -1;
+    private static final String DEFAULT_COUNT = "10";
     private final FilmService filmService;
 
     @GetMapping
     public List<Film> getAllFilms() {
-        log.info("Get list of films.");
+        log.info("Requested all films");
         return filmService.getAllFilms();
     }
 
@@ -37,44 +40,53 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10") int count) {
-        log.info("Requested most popular {} films", count);
-        return filmService.getTopFilms(count);
+    public List<Film> getPopularFilms(@RequestParam(defaultValue = DEFAULT_COUNT) int count,
+                                      @RequestParam Optional<Integer> genreId,
+                                      @RequestParam Optional<String> year) {
+        log.info("Requested most popular {} films with genre {} released in {} year",
+                count, genreId, year);
+        return filmService.getTopFilms(count, genreId, year);
     }
 
     @GetMapping("/director/{directorId}")
     public List<Film> getFilmsByDirector(@PathVariable int directorId, @RequestParam String sortBy) {
-        log.info("Requested films by director id {}, sort by {}", directorId, sortBy);
+        log.info("Requested films by director {}, sort by {}", directorId, sortBy);
         return filmService.getTopByDirector(directorId, sortBy);
+    }
+
+    @GetMapping("/search")
+    public List<Film> searchFilms(@RequestParam String query, @RequestParam String by) {
+        log.info("Requested films like {}, search in {}", query, by);
+        return filmService.searchFilms(query, by);
     }
 
     @PostMapping
     public Film post(@Valid @RequestBody Film film) {
-        log.info("Requested add film {}", film);
+        log.info("Requested creation of film {}", film);
         return filmService.addFilm(film);
     }
 
     @PutMapping("/{id}/like/{userId}")
     public Film addLike(@PathVariable long id, @PathVariable long userId) {
-        log.info("Requested add like to film {} from user {}", id, userId);
+        log.info("Requested addition of like for film {} from user {}", id, userId);
         filmService.addLike(userId, id);
         return filmService.getFilmById(id);
     }
 
     @PutMapping
     public Film update(@Valid @RequestBody Film film) {
-        log.info("Requested update film {}", film);
+        log.info("Requested change of film");
         return filmService.update(film);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
     public void deleteLike(@PathVariable long id, @PathVariable long userId) {
-        log.info("Requested delete like to film {} from user {}", id, userId);
+        log.info("Requested deletion of like for film {} from user {}", id, userId);
         filmService.deleteLike(userId, id);
     }
 
     @GetMapping("/common")
-    public List<Film> getCommonFilms(@RequestParam int userId, @RequestParam int friendId) {
+    public List<Film> getCommonFilms(@RequestParam long userId, @RequestParam long friendId) {
         log.info("Requested common films of user {} with his friend {}", userId, friendId);
         return filmService.getCommonFilms(userId, friendId);
     }
