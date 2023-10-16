@@ -35,6 +35,7 @@ CREATE TABLE film_genre (
 CREATE TABLE film_like (
     film_id int NOT NULL,
     user_id int NOT NULL,
+    score int NOT NULL,
     PRIMARY KEY (film_id, user_id)
 );
 
