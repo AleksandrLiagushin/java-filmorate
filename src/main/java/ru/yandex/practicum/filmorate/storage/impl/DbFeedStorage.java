@@ -59,13 +59,13 @@ public class DbFeedStorage implements FeedStorage {
     }
 
     @Override
-    public void addLike(long userId, long entityId) {
-        addFeed(Operation.ADD, EventType.LIKE, userId, entityId);
+    public void addMark(long userId, long entityId) {
+        addFeed(Operation.ADD, EventType.MARK, userId, entityId);
     }
 
     @Override
-    public void deleteLike(long userId, long entityId) {
-        addFeed(Operation.REMOVE, EventType.LIKE, userId, entityId);
+    public void deleteMark(long userId, long entityId) {
+        addFeed(Operation.REMOVE, EventType.MARK, userId, entityId);
     }
 
     @Override

@@ -6,9 +6,9 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.exception.WrongIdException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.LikeStorage;
 import ru.yandex.practicum.filmorate.storage.FeedStorage;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.MarkStorage;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,7 +21,7 @@ public class FilmService {
     private static final LocalDate EARLIEST_FILM_RELEASE = LocalDate.of(1895, 12, 5);
     private static final int DEFAULT_FILMS_COUNT = 10;
     private final FilmStorage filmStorage;
-    private final LikeStorage likeStorage;
+    private final MarkStorage markStorage;
     private final FeedStorage feedStorage;
     private final UserService userService;
     private final DirectorService directorService;
@@ -44,26 +44,30 @@ public class FilmService {
         return filmFullService.update(film);
     }
 
-    public void addLike(long userId, long filmId) {
-        if (isLegalFilmId(filmId) && userService.isLegalUserId(userId)) {
-            if (likeStorage.getLikesByFilmId(filmId).contains(userId)) {
-                feedStorage.addLike(userId, filmId);
-                return;
+    public void addMark(long userId, long filmId, int mark) {
+        if (isLegalFilmId(filmId) && userService.isLegalUserId(userId) && isLegalMark(mark)) {
+            if (markStorage.getMarksByFilmId(filmId).containsKey(userId)) {
+                if (markStorage.getMarksByFilmId(filmId).get(userId) == mark) {
+                    feedStorage.addMark(userId, filmId);
+                    return;
+                } else {
+                    markStorage.deleteMark(userId, filmId);
+                }
             }
-            likeStorage.addLike(userId, filmId);
-            feedStorage.addLike(userId, filmId);
+            markStorage.addMark(userId, filmId, mark);
+            feedStorage.addMark(userId, filmId);
         }
     }
 
-    public void deleteLike(long userId, long filmId) {
+    public void deleteMark(long userId, long filmId) {
         if (!isLegalFilmId(filmId)) {
             throw new WrongIdException("No film with id = " + filmId + " in DB was found.");
         }
         if (!userService.isLegalUserId(userId)) {
             throw new WrongIdException("No user with id = " + userId + " in DB was found.");
         }
-        likeStorage.deleteLike(userId, filmId);
-        feedStorage.deleteLike(userId, filmId);
+        markStorage.deleteMark(userId, filmId);
+        feedStorage.deleteMark(userId, filmId);
     }
 
     public void deleteFilmById(long id) {
@@ -116,5 +120,12 @@ public class FilmService {
 
     private boolean isNotValid(Film film) {
         return film.getReleaseDate().isBefore(EARLIEST_FILM_RELEASE);
+    }
+
+    private boolean isLegalMark(int mark) {
+        if (mark < 1 || mark > 10) {
+            throw new ValidationException("Mark must be between 0 and 10");
+        }
+        return true;
     }
 }

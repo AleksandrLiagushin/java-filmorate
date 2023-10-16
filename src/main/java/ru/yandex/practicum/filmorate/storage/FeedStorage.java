@@ -6,9 +6,9 @@ import java.util.List;
 
 public interface FeedStorage {
 
-    void addLike(long userId, long entityId);
+    void addMark(long userId, long entityId);
 
-    void deleteLike(long userId, long entityId);
+    void deleteMark(long userId, long entityId);
 
     void addReview(long userId, long entityId);
 
