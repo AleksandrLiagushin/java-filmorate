@@ -30,7 +30,7 @@ public class DbMarkStorage implements MarkStorage {
 
     @Override
     public Map<Long, Integer> getMarksByFilmId(Long filmId) {
-        String sql = "SELECT user_id, mark FROM film_mark WHERE film_id = ?";
+        String sql = "select user_id, mark from film_mark where film_id = ?";
 
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, filmId);
 
@@ -47,7 +47,7 @@ public class DbMarkStorage implements MarkStorage {
 
     @Override
     public Map<Long, Integer> getMarksByUserId(Long userId) {
-        String sql = "SELECT film_id, mark FROM film_mark WHERE user_id = ?";
+        String sql = "select film_id, mark from film_mark where user_id = ?";
 
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, userId);
 
