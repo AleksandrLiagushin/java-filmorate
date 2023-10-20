@@ -53,6 +53,7 @@ public class FilmService {
                     markStorage.deleteMark(userId, filmId);
                 }
             }
+
             markStorage.addMark(userId, filmId, mark);
             feedStorage.addMark(userId, filmId);
         }
@@ -65,6 +66,7 @@ public class FilmService {
         if (!userService.existsById(userId)) {
             throw new WrongIdException("No user with id = " + userId + " in DB was found.");
         }
+
         markStorage.deleteMark(userId, filmId);
         feedStorage.deleteMark(userId, filmId);
     }
@@ -73,6 +75,7 @@ public class FilmService {
         if (isIncorrectId(id)) {
             throw new WrongIdException("Param must be more then 0");
         }
+
         filmStorage.delete(id);
     }
 
