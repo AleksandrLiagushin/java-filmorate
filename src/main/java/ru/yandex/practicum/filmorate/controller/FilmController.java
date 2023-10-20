@@ -16,14 +16,12 @@ import ru.yandex.practicum.filmorate.service.FilmService;
 
 import javax.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @RestController
 @RequestMapping("/films")
 @RequiredArgsConstructor
 public class FilmController {
-    private static final int DUMMY_PARAM_VALUE = -1;
     private static final String DEFAULT_COUNT = "10";
     private final FilmService filmService;
 
@@ -41,8 +39,8 @@ public class FilmController {
 
     @GetMapping("/popular")
     public List<Film> getPopularFilms(@RequestParam(defaultValue = DEFAULT_COUNT) int count,
-                                      @RequestParam Optional<Integer> genreId,
-                                      @RequestParam Optional<String> year) {
+                                      @RequestParam(required = false) Integer genreId,
+                                      @RequestParam(required = false) String year) {
         log.info("Requested most popular {} films with genre {} released in {} year",
                 count, genreId, year);
         return filmService.getTopFilms(count, genreId, year);
@@ -66,10 +64,10 @@ public class FilmController {
         return filmService.addFilm(film);
     }
 
-    @PutMapping("/{id}/like/{userId}")
-    public Film addLike(@PathVariable long id, @PathVariable long userId) {
-        log.info("Requested addition of like for film {} from user {}", id, userId);
-        filmService.addLike(userId, id);
+    @PutMapping("/{id}/mark/{userId}")
+    public Film addMark(@PathVariable long id, @PathVariable long userId, @RequestParam int mark) {
+        log.info("Requested addition of mark for film {} from user {} mark = {}", id, userId, mark);
+        filmService.addMark(userId, id, mark);
         return filmService.getFilmById(id);
     }
 
@@ -79,10 +77,10 @@ public class FilmController {
         return filmService.update(film);
     }
 
-    @DeleteMapping("/{id}/like/{userId}")
-    public void deleteLike(@PathVariable long id, @PathVariable long userId) {
+    @DeleteMapping("/{id}/mark/{userId}")
+    public void deleteMark(@PathVariable long id, @PathVariable long userId) {
         log.info("Requested deletion of like for film {} from user {}", id, userId);
-        filmService.deleteLike(userId, id);
+        filmService.deleteMark(userId, id);
     }
 
     @GetMapping("/common")

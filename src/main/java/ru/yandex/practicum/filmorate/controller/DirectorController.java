@@ -49,7 +49,7 @@ public class DirectorController {
     }
 
     @DeleteMapping("/{id}")
-    public long deleteDirector(@PathVariable long id) {
+    public long deleteDirector(@PathVariable int id) {
         log.info("Requested deletion of director {}", id);
         return directorService.deleteDirector(id);
     }

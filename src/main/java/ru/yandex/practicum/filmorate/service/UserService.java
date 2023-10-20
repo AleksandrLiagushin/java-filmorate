@@ -2,22 +2,19 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.exception.WrongIdException;
 import ru.yandex.practicum.filmorate.model.Feed;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.FeedStorage;
 import ru.yandex.practicum.filmorate.storage.FriendStorage;
-import ru.yandex.practicum.filmorate.storage.LikeStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -25,17 +22,27 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserStorage userStorage;
     private final FriendStorage friendStorage;
-    private final LikeStorage likeStorage;
-    private final FilmStorage filmStorage;
     private final FeedStorage feedStorage;
-    private final JdbcTemplate jdbcTemplate;
+    private final FilmFullService filmFullService;
 
     public User create(User user) {
-        userStorage.add(user);
-        return user;
+        changeNameToLogin(user);
+        if (isNotValid(user)) {
+            throw new ValidationException("Wrong user data");
+        }
+
+        return userStorage.add(user);
     }
 
     public User update(User user) {
+        changeNameToLogin(user);
+        if (isNotValid(user)) {
+            throw new ValidationException("Wrong user data");
+        }
+        if (!existsById(user.getId())) {
+            throw new WrongIdException("No users with id = " + user.getId() + " in DB were found.");
+        }
+
         return userStorage.update(user);
     }
 
@@ -44,77 +51,85 @@ public class UserService {
     }
 
     public void deleteUserById(long id) {
+        if (isIncorrectId(id)) {
+            throw new WrongIdException("Param must be more then 0");
+        }
         userStorage.delete(id);
     }
 
     public void addFriend(long userId, long friendId) {
+        if (!existsById(userId) || !existsById(friendId)) {
+            throw new WrongIdException("No users with id = " + userId + " or " + friendId + " in DB were found.");
+        }
         friendStorage.addFriend(userId, friendId);
+        feedStorage.addFriendRequest(userId, friendId);
     }
 
     public void deleteFriend(long userId, long friendId) {
+        if (!existsById(userId) || !existsById(friendId)) {
+            throw new WrongIdException("No users with id = " + userId + " or " + friendId + " in DB were found.");
+        }
+
         friendStorage.deleteFriend(userId, friendId);
+        feedStorage.deleteFriendRequest(userId, friendId);
     }
 
     public void updateFriendRequest(long userId, long friendId) {
+        if (!existsById(userId) || !existsById(friendId)) {
+            throw new WrongIdException("No users with id = " + userId + " or " + friendId + " in DB were found.");
+        }
+
         friendStorage.acceptFriendRequest(userId, friendId);
+        feedStorage.acceptFriendRequest(userId, friendId);
     }
 
     public List<User> findCommonFriends(long userId, long otherId) {
-        return userStorage.getCommonFriendsByUserId(userId, otherId);
+        if (!existsById(userId) || !existsById(otherId)) {
+            throw new WrongIdException("No users with id = " + userId + " or " + otherId + " in DB were found.");
+        }
+
+        return userStorage.getCommonFriends(userId, otherId);
     }
 
     public List<Feed> getEventsList(long userId) {
-        return feedStorage.getFeedList(userId);
+        if (!existsById(userId)) {
+            throw new WrongIdException("No user with id = " + userId + " in DB was found.");
+        }
+
+        return feedStorage.getFeed(userId);
     }
 
     public User getById(long userId) {
-        return userStorage.getById(userId);
+        if (isIncorrectId(userId)) {
+            throw new WrongIdException("Param must be more then 0");
+        }
+        Optional<User> userOpt = userStorage.getById(userId);
+
+        return userOpt.orElseThrow(() -> new WrongIdException("No user with id = " + userId + " in DB was found."));
     }
 
     public List<User> getFriends(long userId) {
+        if (!existsById(userId)) {
+            throw new WrongIdException("No user with id = " + userId + " in DB was found.");
+        }
+
         return userStorage.getFriendsByUserId(userId);
     }
 
     public List<Film> getRecommendations(long userId) {
-        return filmStorage.getRecommendations(userId);
+        if (!existsById(userId)) {
+            throw new WrongIdException("No user with id = " + userId + " in DB was found.");
+        }
+
+        return filmFullService.getRecommendations(userId);
     }
 
-    public List<Film> getRecommendations(long id) {
-        User user = userStorage.getById(id);
-        Set<Long> likedFilms = likeStorage.getLikesByUserId(id);
-        List<User> commonUsers = new ArrayList<>();
-
-        if (likedFilms.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        String sql = "select user_id from film_like group by user_id";
-        List<Long> userIds = jdbcTemplate.query(sql, (rs, rowNum) -> rs.getLong("user_id"));
-
-        for (Long userId : userIds) {
-            User anotherUser = userStorage.getById(userId);
-            if (!getCommonFilmLikes(user, anotherUser).isEmpty() && !anotherUser.equals(user)) {
-                commonUsers.add(anotherUser);
-            }
-        }
-
-        List<Film> recommendedFilms = new ArrayList<>();
-
-        for (User u : commonUsers) {
-            String sqlLikes = "select film_id from film_like where user_id = ? and film_id not in (" + likedFilms
-                    .stream()
-                    .map(Object::toString)
-                    .collect(Collectors.joining(",")) + ")";
-            recommendedFilms.addAll(jdbcTemplate.query(sqlLikes, this::mapper, u.getId()));
-        }
-
-        return new ArrayList<>(new HashSet<>(recommendedFilms));
+    public boolean existsById(long userId) {
+        return !isIncorrectId(userId) && userStorage.existsById(userId);
     }
 
-    private Set<Long> getCommonFilmLikes(User user, User anotherUser) {
-        Set<Long> likedFilms = likeStorage.getLikesByUserId(user.getId());
-        likedFilms.retainAll(likeStorage.getLikesByUserId(anotherUser.getId()));
-        return likedFilms;
+    private boolean isIncorrectId(long id) {
+        return id <= 0;
     }
 
     private boolean isNotValid(User user) {
@@ -124,17 +139,8 @@ public class UserService {
 
     private void changeNameToLogin(User user) {
         if (user.getName() == null || user.getName().isEmpty() || user.getName().isBlank()) {
-            log.info("Changed user name to user login");
+            log.info("Changed blank user name to user login {}", user.getLogin());
             user.setName(user.getLogin());
         }
     }
-
-    private boolean isIncorrectId(long id) {
-        return id <= 0;
-    }
-
-    private Film mapper(ResultSet resultSet, int rowNum) throws SQLException {
-        return filmStorage.getById(resultSet.getLong("film_id"));
-    }
-
 }

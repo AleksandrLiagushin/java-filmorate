@@ -3,9 +3,10 @@ package ru.yandex.practicum.filmorate.storage;
 import ru.yandex.practicum.filmorate.model.Director;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface DirectorStorage {
-    Director getDirectorById(int id);
+    Optional<Director> getDirectorById(int id);
 
     Director addDirector(Director director);
 
@@ -16,4 +17,6 @@ public interface DirectorStorage {
     long deleteDirector(long id);
 
     List<Director> getByFilmId(long filmId);
+
+    boolean existsById(long id);
 }

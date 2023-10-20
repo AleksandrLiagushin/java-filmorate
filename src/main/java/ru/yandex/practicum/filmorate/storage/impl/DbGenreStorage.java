@@ -4,18 +4,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.WrongIdException;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.GenreStorage;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
 public class DbGenreStorage implements GenreStorage {
-
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -26,13 +25,13 @@ public class DbGenreStorage implements GenreStorage {
     }
 
     @Override
-    public Genre getById(int id) {
+    public Optional<Genre> getById(int id) {
         try {
-            return jdbcTemplate.queryForObject(
+            return Optional.ofNullable(jdbcTemplate.queryForObject(
                     "select * from genres where id = ?",
-                    this::mapper, id);
+                    this::mapper, id));
         } catch (EmptyResultDataAccessException e) {
-            throw new WrongIdException("No such genre in DB with id = " + id + " was found.");
+            return Optional.empty();
         }
     }
 

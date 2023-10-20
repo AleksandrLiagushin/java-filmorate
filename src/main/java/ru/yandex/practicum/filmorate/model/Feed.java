@@ -12,16 +12,4 @@ public class Feed {
     private final Operation operation;
     private final long userId;
     private final long entityId;
-
-    public enum EventType {
-        LIKE,
-        FRIEND,
-        REVIEW
-    }
-
-    public enum Operation {
-        ADD,
-        UPDATE,
-        REMOVE
-    }
 }

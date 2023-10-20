@@ -7,7 +7,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.WrongIdException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.storage.DirectorStorage;
 
@@ -15,7 +14,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 
 @Slf4j
 @Repository
@@ -24,79 +23,69 @@ public class DbDirectorStorage implements DirectorStorage {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public Director getDirectorById(int id) {
+    public Optional<Director> getDirectorById(int id) {
         try {
-            return jdbcTemplate.queryForObject("SELECT * FROM directors WHERE id = ?",
-                    (rs, RowNum) -> new Director(rs.getInt("id"), rs.getString("name")), id);
+            return Optional.ofNullable(jdbcTemplate.queryForObject("select * from directors where id = ?",
+                    (rs, RowNum) -> new Director(rs.getInt("id"), rs.getString("name")), id));
         } catch (EmptyResultDataAccessException e) {
-            throw new WrongIdException("There is no director in DB with id = " + id);
+            return Optional.empty();
         }
     }
 
     @Override
     public Director addDirector(Director director) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
-        String sqlQuery = "INSERT INTO directors (name) VALUES (?)";
+        String sqlQuery = "insert into directors (name) values (?)";
 
         jdbcTemplate.update(con -> {
             PreparedStatement statement = con.prepareStatement(sqlQuery, new String[]{"id"});
             statement.setString(1, director.getName());
             return statement;
         }, keyHolder);
-        log.info("Director {} added", Objects.requireNonNull(keyHolder.getKey()).intValue());
-        return getDirectorById(Objects.requireNonNull(keyHolder.getKey()).intValue());
+
+        log.info("director {} added", keyHolder.getKey());
+        director.setId(keyHolder.getKey().intValue());
+
+        return director;
     }
 
     @Override
     public List<Director> getAllDirectors() {
-        return jdbcTemplate.query("SELECT * FROM directors",
+        return jdbcTemplate.query("select * from directors",
                 (rs, RowNum) -> new Director(rs.getInt("id"), rs.getString("name")));
     }
 
     @Override
     public Director updateDirector(Director director) {
-        int response = jdbcTemplate.update("UPDATE directors SET name = ? WHERE id = ?",
+        jdbcTemplate.update("update directors set name = ? where id = ?",
                 director.getName(),
                 director.getId());
-
-        if (response == 0) {
-            throw new WrongIdException("No such director in DB with id = " + director.getId() +
-                    " was found. Update failed");
-        }
-
         log.info("Director {} updated", director.getId());
-        return getDirectorById(director.getId());
+        return getDirectorById(director.getId()).orElse(null);
     }
 
     @Override
     public long deleteDirector(long id) {
-        if (isIncorrectId(id))  {
-            throw new WrongIdException("Param must be more then 0");
-        }
-        jdbcTemplate.update("DELETE FROM directors WHERE id = ?", id);
+        jdbcTemplate.update("delete from directors where id = ?", id);
         return id;
     }
 
     @Override
     public List<Director> getByFilmId(long filmId) {
-        if (isIncorrectId(filmId))  {
-            throw new WrongIdException("Param must be more then 0");
-        }
         return jdbcTemplate.query(
-                "SELECT * FROM directors WHERE id IN (SELECT director_id FROM film_director WHERE film_id = ?)",
+                "select * from directors where id in (select director_id from film_director where film_id = ?)",
                 (rs, RowNum) -> mapper(rs),
                 filmId);
     }
 
-    private Director mapper(ResultSet resultSet) throws SQLException {
-        try {
-            return new Director(resultSet.getInt("id"), resultSet.getString("name"));
-        } catch (SQLException e) {
-            throw new WrongIdException("Can't unwrap director from DB response");
-        }
+    @Override
+    public boolean existsById(long id) {
+            Integer count = jdbcTemplate.queryForObject(
+                    "select count(1) from directors where id=?", Integer.class, id);
+            return count == 1;
     }
 
-    private boolean isIncorrectId(long id) {
-        return id <= 0;
+    private Director mapper(ResultSet resultSet) throws SQLException {
+        return new Director(resultSet.getInt("id"), resultSet.getString("name"));
     }
 }

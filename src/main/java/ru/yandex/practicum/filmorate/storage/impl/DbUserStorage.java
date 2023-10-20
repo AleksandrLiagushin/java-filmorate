@@ -7,17 +7,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.exception.WrongIdException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
@@ -27,10 +24,6 @@ public class DbUserStorage implements UserStorage {
 
     @Override
     public User add(User user) {
-        changeNameToLogin(user);
-        if (isNotValid(user)) {
-            throw new ValidationException("Can't create new user. Check your data.");
-        }
         KeyHolder keyHolder = new GeneratedKeyHolder();
         String sqlQuery = "insert into users (name, login, email, birthday) values (?, ?, ?, ?)";
 
@@ -42,51 +35,38 @@ public class DbUserStorage implements UserStorage {
             stmt.setDate(4, java.sql.Date.valueOf(user.getBirthday()));
             return stmt;
         }, keyHolder);
-        user.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
-        if (keyHolder.getKey() != null) {
-            log.info("User {} added", Objects.requireNonNull(keyHolder.getKey()).intValue());
-        }
+        user.setId(keyHolder.getKey().longValue());
+
+        log.info("User {} added", keyHolder.getKey().intValue());
+
         return user;
     }
 
     @Override
     public User update(User user) {
-        changeNameToLogin(user);
-        if (isNotValid(user)) {
-            throw new ValidationException("Can't create new user. Check your data.");
-        }
-        int userFound = jdbcTemplate.update("update users set name = ?, login = ?, email = ?, birthday = ?" +
+        jdbcTemplate.update("update users set name = ?, login = ?, email = ?, birthday = ?" +
                         "where id = ?",
                 user.getName(),
                 user.getLogin(),
                 user.getEmail(),
                 java.sql.Date.valueOf(user.getBirthday()),
                 user.getId());
-        if (userFound == 0) {
-            throw new WrongIdException("No user with id = " + user.getId() + " in DB was found.");
-        }
         log.info("User {} updated", user.getId());
-        return user;
+        return getById(user.getId()).orElse(null);
     }
 
     @Override
     public void delete(Long userId) {
-        if (isIncorrectId(userId))  {
-            throw new WrongIdException("Param must be more then 0");
-        }
         jdbcTemplate.update("delete from users where id = ?", userId);
     }
 
     @Override
-    public User getById(Long userID) {
-        if (isIncorrectId(userID))  {
-            throw new WrongIdException("Param must be more then 0");
-        }
-        String sqlQuery = "select id, name, login, email, birthday from users where id=?";
+    public Optional<User> getById(Long userId) {
         try {
-            return jdbcTemplate.queryForObject(sqlQuery, this::mapper, userID);
+            String sqlQuery = "select id, name, login, email, birthday from users where id=?";
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sqlQuery, this::mapper, userId));
         } catch (EmptyResultDataAccessException e) {
-            throw new WrongIdException("No user with id = " + userID + " in DB was found.");
+            return Optional.empty();
         }
     }
 
@@ -99,9 +79,7 @@ public class DbUserStorage implements UserStorage {
     }
 
     @Override
-    public List<User> getCommonFriendsByUserId(long userId, long otherId) {
-        getById(userId);
-        getById(otherId);
+    public List<User> getCommonFriends(long userId, long otherId) {
         String sql = "select u.* " +
                 "from friends fl1 join friends fl2 on fl1.friend_id = fl2.friend_id " +
                 "join users u on fl2.friend_id = u.id " +
@@ -111,11 +89,16 @@ public class DbUserStorage implements UserStorage {
 
     @Override
     public List<User> getFriendsByUserId(long userId) {
-        getById(userId);
         String sql = "select u.* " +
                 "from friends fl join users u on fl.friend_id = u.id " +
                 "where fl.user_id = ?";
         return jdbcTemplate.query(sql, this::mapper, userId);
+    }
+
+    @Override
+    public boolean existsById(long id) {
+            Integer count = jdbcTemplate.queryForObject("select count(1) from users where id=?", Integer.class, id);
+            return count == 1;
     }
 
     private User mapper(ResultSet resultSet, int rowNum) throws SQLException {
@@ -126,21 +109,5 @@ public class DbUserStorage implements UserStorage {
                 .email(resultSet.getString("email"))
                 .birthday(resultSet.getDate("birthday").toLocalDate())
                 .build();
-    }
-
-    private boolean isIncorrectId(Long id) {
-        return id == null || id <= 0;
-    }
-
-    private boolean isNotValid(User user) {
-        return user.getLogin().contains(" ")
-                || user.getBirthday().isAfter(LocalDate.now());
-    }
-
-    private void changeNameToLogin(User user) {
-        if (user.getName() == null || user.getName().isEmpty() || user.getName().isBlank()) {
-            log.info("Changed blank user name to user login {}", user.getLogin());
-            user.setName(user.getLogin());
-        }
     }
 }
