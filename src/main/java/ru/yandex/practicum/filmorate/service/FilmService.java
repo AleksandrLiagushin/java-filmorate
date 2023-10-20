@@ -59,6 +59,7 @@ public class FilmService {
         }
         if (marksByFilm.containsKey(userId)) {
             markStorage.deleteMark(userId, filmId);
+            feedStorage.deleteMark(userId, filmId);
         }
 
         markStorage.addMark(userId, filmId, mark);
@@ -132,7 +133,7 @@ public class FilmService {
 
     private void isLegalMark(int mark) {
         if (mark < 1 || mark > 10) {
-            throw new ValidationException("Mark must be between 0 and 10");
+            throw new ValidationException("Mark must be between 1 and 10");
         }
     }
 }
