@@ -57,7 +57,7 @@ public class FilmService {
         if (marksByFilm.get(userId) == mark) {
             return;
         }
-        if (marksByFilm.containsKey(userId)){
+        if (marksByFilm.containsKey(userId)) {
             markStorage.deleteMark(userId, filmId);
         }
 
