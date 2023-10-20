@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.storage.MarkStorage;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -44,19 +45,24 @@ public class FilmService {
     }
 
     public void addMark(long userId, long filmId, int mark) {
-        if (existsById(filmId) && userService.existsById(userId) && isLegalMark(mark)) {
-            if (markStorage.getMarksByFilmId(filmId).containsKey(userId)) {
-                if (markStorage.getMarksByFilmId(filmId).get(userId) == mark) {
-                    feedStorage.addMark(userId, filmId);
-                    return;
-                } else {
-                    markStorage.deleteMark(userId, filmId);
-                }
-            }
-
-            markStorage.addMark(userId, filmId, mark);
-            feedStorage.addMark(userId, filmId);
+        isLegalMark(mark);
+        if (!existsById(filmId)) {
+            throw new WrongIdException("No film with id = " + filmId + " in DB was found.");
         }
+        if (!userService.existsById(userId)) {
+            throw new WrongIdException("No user with id = " + userId + " in DB was found.");
+        }
+
+        Map<Long, Integer> marksByFilm = markStorage.getMarksByFilmId(filmId);
+        if (marksByFilm.get(userId) == mark) {
+            return;
+        }
+        if (marksByFilm.containsKey(userId)){
+            markStorage.deleteMark(userId, filmId);
+        }
+
+        markStorage.addMark(userId, filmId, mark);
+        feedStorage.addMark(userId, filmId);
     }
 
     public void deleteMark(long userId, long filmId) {
@@ -124,10 +130,9 @@ public class FilmService {
         return film.getReleaseDate().isBefore(EARLIEST_FILM_RELEASE);
     }
 
-    private boolean isLegalMark(int mark) {
+    private void isLegalMark(int mark) {
         if (mark < 1 || mark > 10) {
             throw new ValidationException("Mark must be between 0 and 10");
         }
-        return true;
     }
 }
