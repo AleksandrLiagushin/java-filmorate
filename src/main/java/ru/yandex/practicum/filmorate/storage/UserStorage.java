@@ -20,5 +20,5 @@ public interface UserStorage {
 
     List<User> getFriendsByUserId(long userId);
 
-    boolean isLegalId(long id);
+    boolean existsById(long id);
 }

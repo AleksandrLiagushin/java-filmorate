@@ -18,7 +18,7 @@ public interface FilmStorage {
 
     List<Film> getTopByDirector(int id, String sortBy);
 
-    List<Film> getPopular(int count, Optional<Integer> genreId, Optional<String> year);
+    List<Film> getPopular(int count, Integer genreId, String year);
 
     List<Film> getCommonFilms(long userId, long friendId);
 
@@ -26,5 +26,5 @@ public interface FilmStorage {
 
     List<Film> getRecommendations(long userId);
 
-    boolean isLegalId(long id);
+    boolean existsById(long id);
 }

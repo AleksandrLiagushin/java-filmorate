@@ -16,7 +16,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 
 @Repository
 @RequiredArgsConstructor
@@ -37,10 +36,9 @@ public class DbFeedStorage implements FeedStorage {
             stmt.setLong(5, entityId);
             return stmt;
         }, keyHolder);
-        if (keyHolder.getKey() != null) {
-            log.info("User {} has got an event {} {}.{} with object {}.",
-                    userId, Objects.requireNonNull(keyHolder.getKey()).longValue(), operation, eventType, entityId);
-        }
+
+        log.info("User {} has got an event {} {}.{} with object {}.",
+                userId, keyHolder.getKey().longValue(), operation, eventType, entityId);
     }
 
     @Override

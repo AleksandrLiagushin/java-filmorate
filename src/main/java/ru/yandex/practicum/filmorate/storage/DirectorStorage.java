@@ -18,5 +18,5 @@ public interface DirectorStorage {
 
     List<Director> getByFilmId(long filmId);
 
-    boolean isLegalId(long id);
+    boolean existsById(long id);
 }

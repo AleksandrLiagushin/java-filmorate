@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.exception.WrongIdException;
-import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Feed;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FeedStorage;
 import ru.yandex.practicum.filmorate.storage.FriendStorage;
@@ -39,7 +39,7 @@ public class UserService {
         if (isNotValid(user)) {
             throw new ValidationException("Wrong user data");
         }
-        if (!isLegalUserId(user.getId())) {
+        if (!existsById(user.getId())) {
             throw new WrongIdException("No users with id = " + user.getId() + " in DB were found.");
         }
 
@@ -58,7 +58,7 @@ public class UserService {
     }
 
     public void addFriend(long userId, long friendId) {
-        if (!isLegalUserId(userId) || !isLegalUserId(friendId)) {
+        if (!existsById(userId) || !existsById(friendId)) {
             throw new WrongIdException("No users with id = " + userId + " or " + friendId + " in DB were found.");
         }
         friendStorage.addFriend(userId, friendId);
@@ -66,7 +66,7 @@ public class UserService {
     }
 
     public void deleteFriend(long userId, long friendId) {
-        if (!isLegalUserId(userId) || !isLegalUserId(friendId)) {
+        if (!existsById(userId) || !existsById(friendId)) {
             throw new WrongIdException("No users with id = " + userId + " or " + friendId + " in DB were found.");
         }
 
@@ -75,7 +75,7 @@ public class UserService {
     }
 
     public void updateFriendRequest(long userId, long friendId) {
-        if (!isLegalUserId(userId) || !isLegalUserId(friendId)) {
+        if (!existsById(userId) || !existsById(friendId)) {
             throw new WrongIdException("No users with id = " + userId + " or " + friendId + " in DB were found.");
         }
 
@@ -84,7 +84,7 @@ public class UserService {
     }
 
     public List<User> findCommonFriends(long userId, long otherId) {
-        if (!isLegalUserId(userId) || !isLegalUserId(otherId)) {
+        if (!existsById(userId) || !existsById(otherId)) {
             throw new WrongIdException("No users with id = " + userId + " or " + otherId + " in DB were found.");
         }
 
@@ -92,7 +92,7 @@ public class UserService {
     }
 
     public List<Feed> getEventsList(long userId) {
-        if (!isLegalUserId(userId)) {
+        if (!existsById(userId)) {
             throw new WrongIdException("No user with id = " + userId + " in DB was found.");
         }
 
@@ -105,15 +105,11 @@ public class UserService {
         }
         Optional<User> userOpt = userStorage.getById(userId);
 
-        if (userOpt.isEmpty()) {
-            throw new WrongIdException("No user with id = " + userId + " in DB was found.");
-        }
-
-        return userOpt.get();
+        return userOpt.orElseThrow(() -> new WrongIdException("No user with id = " + userId + " in DB was found."));
     }
 
     public List<User> getFriends(long userId) {
-        if (!isLegalUserId(userId)) {
+        if (!existsById(userId)) {
             throw new WrongIdException("No user with id = " + userId + " in DB was found.");
         }
 
@@ -121,15 +117,15 @@ public class UserService {
     }
 
     public List<Film> getRecommendations(long userId) {
-        if (!isLegalUserId(userId)) {
+        if (!existsById(userId)) {
             throw new WrongIdException("No user with id = " + userId + " in DB was found.");
         }
 
         return filmFullService.getRecommendations(userId);
     }
 
-    public boolean isLegalUserId(long userId) {
-        return !isIncorrectId(userId) && userStorage.isLegalId(userId);
+    public boolean existsById(long userId) {
+        return !isIncorrectId(userId) && userStorage.existsById(userId);
     }
 
     private boolean isIncorrectId(long id) {

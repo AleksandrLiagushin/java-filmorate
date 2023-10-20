@@ -23,10 +23,8 @@ public class GenreService {
             throw new WrongIdException("Param must be more then 0");
         }
         Optional<Genre> genreOpt = genreStorage.getById(id);
-        if (genreOpt.isEmpty()) {
-            throw new WrongIdException("No such genre in DB with id = " + id + " was found.");
-        }
-        return genreOpt.get();
+
+        return genreOpt.orElseThrow(() -> new WrongIdException("No such genre in DB with id = " + id + " was found."));
     }
 
     private boolean isIncorrectId(int id) {

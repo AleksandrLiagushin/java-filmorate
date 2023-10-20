@@ -7,7 +7,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.WrongIdException;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.storage.ReviewStorage;
 
@@ -38,10 +37,8 @@ public class DbReviewStorage implements ReviewStorage {
             return stmt;
         }, keyHolder);
 
-        if (keyHolder.getKey() != null) {
-            log.info("Review {} from user {} on film {} added",
-                    Objects.requireNonNull(keyHolder.getKey()).longValue(), review.getUserId(), review.getFilmId());
-        }
+        log.info("Review {} from user {} on film {} added",
+                Objects.requireNonNull(keyHolder.getKey()).longValue(), review.getUserId(), review.getFilmId());
 
         review.setReviewId(Objects.requireNonNull(keyHolder.getKey()).longValue());
         return review;
@@ -102,27 +99,21 @@ public class DbReviewStorage implements ReviewStorage {
     }
 
     @Override
-    public boolean isLegalId(long id) {
-        try {
-            return jdbcTemplate.queryForObject("select 1 from reviews where id=?", Integer.class, id) != null;
-        } catch (EmptyResultDataAccessException e) {
-        return false;
-    }
+    public boolean existsById(long id) {
+            Integer count = jdbcTemplate.queryForObject(
+                    "select count(1) from reviews where id=?", Integer.class, id);
+            return count == 1;
     }
 
-    private Review mapper(ResultSet resultSet, int rowNum) {
-        try {
-            return Review.builder()
-                    .reviewId(resultSet.getLong("id"))
-                    .content(resultSet.getString("content"))
-                    .positive(resultSet.getBoolean("is_positive"))
-                    .userId(resultSet.getLong("user_id"))
-                    .filmId(resultSet.getLong("film_id"))
-                    .useful(resultSet.getInt("u.cnt"))
-                    .build();
-        } catch (SQLException e) {
-            throw new WrongIdException(e.getMessage());
-        }
+    private Review mapper(ResultSet resultSet, int rowNum) throws SQLException {
+        return Review.builder()
+                .reviewId(resultSet.getLong("id"))
+                .content(resultSet.getString("content"))
+                .positive(resultSet.getBoolean("is_positive"))
+                .userId(resultSet.getLong("user_id"))
+                .filmId(resultSet.getLong("film_id"))
+                .useful(resultSet.getInt("u.cnt"))
+                .build();
     }
 }
 

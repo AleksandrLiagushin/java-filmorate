@@ -7,7 +7,6 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.storage.DirectorStorage;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,11 +17,9 @@ public class DirectorService {
         if (isIncorrectId(id)) {
             throw new WrongIdException("Param must be more then 0");
         }
-        Optional<Director> directorOpt = directorStorage.getDirectorById(id);
-        if (directorOpt.isEmpty()) {
-            throw new WrongIdException("No director with id = " + id + " in DB was found.");
-        }
-        return directorOpt.get();
+
+        return directorStorage.getDirectorById(id).orElseThrow(
+                () -> new WrongIdException("No director with id = " + id + " in DB was found."));
     }
 
     public List<Director> getDirectors() {
@@ -34,21 +31,21 @@ public class DirectorService {
     }
 
     public Director updateDirector(Director director) {
-        if (!isLegalDirectorId(director.getId())) {
+        if (!existsById(director.getId())) {
             throw new WrongIdException("No director with id = " + director.getId() + " in DB was found.");
         }
         return directorStorage.updateDirector(director);
     }
 
     public long deleteDirector(int id) {
-        if (isIncorrectId(id))  {
+        if (isIncorrectId(id)) {
             throw new WrongIdException("Param must be more then 0");
         }
         return directorStorage.deleteDirector(id);
     }
 
-    public boolean isLegalDirectorId(int directorId) {
-        return !isIncorrectId(directorId) && directorStorage.isLegalId(directorId);
+    public boolean existsById(int directorId) {
+        return !isIncorrectId(directorId) && directorStorage.existsById(directorId);
     }
 
     private boolean isIncorrectId(int id) {

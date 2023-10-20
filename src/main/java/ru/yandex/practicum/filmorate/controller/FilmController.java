@@ -16,7 +16,6 @@ import ru.yandex.practicum.filmorate.service.FilmService;
 
 import javax.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -40,8 +39,8 @@ public class FilmController {
 
     @GetMapping("/popular")
     public List<Film> getPopularFilms(@RequestParam(defaultValue = DEFAULT_COUNT) int count,
-                                      @RequestParam Optional<Integer> genreId,
-                                      @RequestParam Optional<String> year) {
+                                      @RequestParam(required = false) Integer genreId,
+                                      @RequestParam(required = false) String year) {
         log.info("Requested most popular {} films with genre {} released in {} year",
                 count, genreId, year);
         return filmService.getTopFilms(count, genreId, year);

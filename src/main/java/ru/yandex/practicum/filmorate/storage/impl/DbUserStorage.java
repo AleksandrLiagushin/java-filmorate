@@ -14,7 +14,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @Repository
@@ -36,10 +35,10 @@ public class DbUserStorage implements UserStorage {
             stmt.setDate(4, java.sql.Date.valueOf(user.getBirthday()));
             return stmt;
         }, keyHolder);
-        user.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
-        if (keyHolder.getKey() != null) {
-            log.info("User {} added", Objects.requireNonNull(keyHolder.getKey()).intValue());
-        }
+        user.setId(keyHolder.getKey().longValue());
+
+        log.info("User {} added", keyHolder.getKey().intValue());
+
         return user;
     }
 
@@ -97,12 +96,9 @@ public class DbUserStorage implements UserStorage {
     }
 
     @Override
-    public boolean isLegalId(long id) {
-        try {
-            return jdbcTemplate.queryForObject("select 1 from users where id=?", Integer.class, id) != null;
-        } catch (EmptyResultDataAccessException e) {
-            return false;
-        }
+    public boolean existsById(long id) {
+            Integer count = jdbcTemplate.queryForObject("select count(1) from users where id=?", Integer.class, id);
+            return count == 1;
     }
 
     private User mapper(ResultSet resultSet, int rowNum) throws SQLException {

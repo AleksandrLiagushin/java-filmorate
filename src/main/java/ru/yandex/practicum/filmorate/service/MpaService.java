@@ -23,10 +23,8 @@ public class MpaService {
             throw new WrongIdException("Param must be more then 0");
         }
         Optional<Mpa> mpaOpt = mpaStorage.getById(id);
-        if (mpaOpt.isEmpty()) {
-            throw new WrongIdException("No such Mpa with id = " + id + " in DB was found");
-        }
-        return mpaOpt.get();
+
+        return mpaOpt.orElseThrow(() -> new WrongIdException("No such Mpa with id = " + id + " in DB was found"));
     }
 
     private boolean isIncorrectId(int id) {

@@ -24,6 +24,7 @@ import java.util.List;
 public class ReviewController {
     private static final String DUMMY_PARAM_VALUE = "-1";
     private static final String DEFAULT_COUNT = "10";
+
     private final ReviewService reviewService;
 
     @PostMapping
