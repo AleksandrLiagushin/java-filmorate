@@ -205,14 +205,15 @@ public class DbFilmStorage implements FilmStorage {
     public List<Film> getRecommendations(long userId) {
         return jdbcTemplate.query("select f.* " +
                         "from " +
-                        "(select fl_other_users.film_id " +
-                        "from film_like fl_other_users " +
-                        "where fl_other_users.user_id <> ? " +
-                        "and fl_other_users.film_id not in (select fl.film_id " +
-                        "FROM film_like fl " +
-                        "where fl.user_id in (?, fl_other_users.user_id) " +
-                        "group by fl.film_id " +
-                        "having count(1) > 1)) recommend_films " +
+                        "(select fm_other_users.film_id " +
+                        "from film_mark fm_other_users " +
+                        "where fm_other_users.user_id <> ? " +
+                        "and fm_other_users.film_id not in (select fm.film_id " +
+                        "from film_mark fm " +
+                        "where fm.user_id in (?, fm_other_users.user_id)" +
+                        "group by fm.film_id " +
+                        "having count(1) > 1) and avg(fm.mark > 5)" +
+                        "order by avg(fm.mark)) recommend_films " +
                         "join films f on recommend_films.film_id = f.id",
                 this::mapper, userId, userId);
     }
