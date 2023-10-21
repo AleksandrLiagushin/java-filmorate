@@ -205,17 +205,23 @@ public class DbFilmStorage implements FilmStorage {
     public List<Film> getRecommendations(long userId) {
         return jdbcTemplate.query("select f.* " +
                         "from " +
-                        "(select fm_other_users.film_id " +
-                        "from film_mark fm_other_users " +
-                        "where fm_other_users.user_id <> ? " +
-                        "and fm_other_users.film_id not in (select fm.film_id " +
+                        "(select other_user_mark.film_id " +
+                        "from film_mark other_user_mark " +
+                        "where other_user_mark.user_id <> ? " +
+                        "and other_user_mark.mark > 5 " +
+                        "and other_user_mark.film_id not in (select fm.film_id " +
                         "from film_mark fm " +
-                        "where fm.user_id in (?, fm_other_users.user_id)" +
-                        "group by fm.film_id " +
-                        "having count(1) > 1) and avg(fm.mark > 5)" +
-                        "order by avg(fm.mark)) recommend_films " +
-                        "join films f on recommend_films.film_id = f.id",
-                this::mapper, userId, userId);
+                        "where fm.user_id = ?) " +
+                        "and other_user_mark.user_id in (select common_mark.user_id " +
+                        "from film_mark common_mark " +
+                        "where common_mark.user_id in (?, other_user_mark.user_id)" +
+                        "and common_mark.mark > 5" +
+                        "group by common_mark.film_id " +
+                        "having count(1) > 1)) recommended_films " +
+                        "join films f on recommended_films.film_id = f.id" +
+                        "having avg(recommended_films.mark) > 5" +
+                        "order by avg(recommended_films.mark) desc",
+                this::mapper, userId, userId, userId);
     }
 
     @Override
