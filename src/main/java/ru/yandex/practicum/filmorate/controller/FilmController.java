@@ -64,10 +64,10 @@ public class FilmController {
         return filmService.addFilm(film);
     }
 
-    @PutMapping("/{id}/like/{userId}")
-    public Film addLike(@PathVariable long id, @PathVariable long userId) {
-        log.info("Requested addition of like for film {} from user {}", id, userId);
-        filmService.addLike(userId, id);
+    @PutMapping("/{id}/mark/{userId}")
+    public Film addMark(@PathVariable long id, @PathVariable long userId, @RequestParam int mark) {
+        log.info("Requested addition of mark for film {} from user {} mark = {}", id, userId, mark);
+        filmService.addMark(userId, id, mark);
         return filmService.getFilmById(id);
     }
 
@@ -77,10 +77,10 @@ public class FilmController {
         return filmService.update(film);
     }
 
-    @DeleteMapping("/{id}/like/{userId}")
-    public void deleteLike(@PathVariable long id, @PathVariable long userId) {
+    @DeleteMapping("/{id}/mark/{userId}")
+    public void deleteMark(@PathVariable long id, @PathVariable long userId) {
         log.info("Requested deletion of like for film {} from user {}", id, userId);
-        filmService.deleteLike(userId, id);
+        filmService.deleteMark(userId, id);
     }
 
     @GetMapping("/common")

@@ -111,25 +111,25 @@ public class DbFilmStorage implements FilmStorage {
     @Override
     public List<Film> getPopular(int count, Integer genreId, String year) {
         return jdbcTemplate.query(
-                "select res.id, res.name, res.description, res.release_date, res.duration, res.cnt, res.rating " +
+                "select res.id, res.name, res.description, res.release_date, res.duration, res.mark, res.rating " +
                         "from ( " +
-                        "select f.*, l.cnt " +
+                        "select f.*, m.mark " +
                         "from films f " +
-                        "left join (select fl.film_id, count(fl.user_id) cnt from film_like fl group by fl.film_id) l " +
-                        "on f.id = l.film_id " +
+                        "left join (select fm.film_id, avg(fm.mark) mark from film_mark fm group by fm.film_id) m " +
+                        "on f.id = m.film_id " +
                         "where ? is null " +
                         "and year(f.release_date) = decode(?, null, year(f.release_date), ?) " +
                         "union " +
-                        "select f.*, l.cnt " +
+                        "select f.*, m.mark " +
                         "from films f " +
-                        "left join (select fl.film_id, count(fl.user_id) cnt from film_like fl group by fl.film_id) l " +
-                        "on f.id = l.film_id " +
+                        "left join (select fm.film_id, avg(fm.mark) mark from film_mark fm group by fm.film_id) m " +
+                        "on f.id = m.film_id " +
                         "join (select fg.film_id from film_genre fg where fg.genre_id = nvl(?, fg.genre_id) group by fg.film_id) g " +
                         "on f.id = g.film_id " +
                         "where ? is not null " +
                         "and year(f.release_date) = decode(?, null, year(f.release_date), ?) " +
                         ") res " +
-                        "order by res.cnt desc " +
+                        "order by res.mark desc " +
                         "limit ? ", this::mapper,
                 genreId,
                 year,
@@ -144,8 +144,9 @@ public class DbFilmStorage implements FilmStorage {
     @Override
     public List<Film> getCommonFilms(long userId, long friendId) {
         return jdbcTemplate.query("select f.*, count(1) cnt " +
-                "from films f join film_like fl on f.id = fl.film_id " +
-                "where fl.user_id in (?, ?) " +
+                "from films f join film_mark fm on f.id = fm.film_id " +
+                "where fm.user_id in (?, ?) " +
+                "where fm.mark > 5 " +
                 "group by f.id " +
                 "having cnt > 1", this::mapper, userId, friendId);
     }
@@ -153,15 +154,15 @@ public class DbFilmStorage implements FilmStorage {
     @Override
     public List<Film> getTopByDirector(int id, String sortBy) {
         String sqlRequest = "select f.* from films f left join " +
-                "(select fl.film_id, count(fl.user_id) cnt from film_like fl group by fl.film_id) l " +
-                "on f.id = l.film_id " +
+                "(select fm.film_id, avg(fm.mark) mark from film_mark fm group by fm.film_id) m " +
+                "on f.id = m.film_id " +
                 "where f.id in (select film_id from film_director where director_id = ?)";
         switch (sortBy) {
             case "year":
                 sqlRequest = sqlRequest + "order by f.release_date";
                 break;
-            case "likes":
-                sqlRequest = sqlRequest + "order by cnt";
+            case "marks":
+                sqlRequest = sqlRequest + "order by mark";
                 break;
             default:
                 throw new ValidationException("No such sort was found");
@@ -174,18 +175,18 @@ public class DbFilmStorage implements FilmStorage {
     public List<Film> searchFilms(String query, String by) {
         query = "%" + query + "%";
         String sqlRequest = "select f.* from films f " +
-                "left join (select fl.film_id, count(fl.user_id) cnt from film_like fl group by fl.film_id) l " +
-                "on f.id = l.film_id ";
+                "left join (select fm.film_id, avg(fm.mark) mark from film_mark fm group by fm.film_id) m " +
+                "on f.id = m.film_id ";
         switch (by) {
             case "title":
-                sqlRequest = sqlRequest + "where lower(f.name) like lower(?) order by cnt desc";
+                sqlRequest = sqlRequest + "where lower(f.name) like lower(?) order by mark desc";
                 return jdbcTemplate.query(sqlRequest, this::mapper, query);
             case "director":
                 sqlRequest = "select f.* from directors d " +
                         "join film_director fd on d.id = fd.director_id " +
                         "join films f on fd.film_id = f.id " +
-                        "left join (select fl.film_id, count(fl.user_id) cnt from film_like fl group by fl.film_id) l " +
-                        "on f.id = l.film_id " +
+                        "left join (select fm.film_id, avg(fm.mark) mark from film_mark fm group by fm.film_id) m " +
+                        "on f.id = m.film_id " +
                         "where lower(d.name) like lower(?) " +
                         "order by cnt desc";
                 return jdbcTemplate.query(sqlRequest, this::mapper, query);
@@ -194,7 +195,7 @@ public class DbFilmStorage implements FilmStorage {
                 sqlRequest = sqlRequest + "left join (select * from directors d join film_director fd " +
                         "on d.id=fd.director_id) dn on f.id=dn.film_id " +
                         "where lower(dn.name) like lower(?) or lower(f.name) like lower(?) " +
-                        "order by cnt desc";
+                        "order by mark desc";
                 return jdbcTemplate.query(sqlRequest, this::mapper, query, query);
         }
         throw new ValidationException("No such sort was found");
