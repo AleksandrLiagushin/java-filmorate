@@ -146,7 +146,6 @@ public class DbFilmStorage implements FilmStorage {
         return jdbcTemplate.query("select f.*, count(1) cnt " +
                 "from films f join film_mark fm on f.id = fm.film_id " +
                 "where fm.user_id in (?, ?) " +
-                "where fm.mark > 5 " +
                 "group by f.id " +
                 "having cnt > 1", this::mapper, userId, friendId);
     }
@@ -215,11 +214,11 @@ public class DbFilmStorage implements FilmStorage {
                         "and other_user_mark.user_id in (select common_mark.user_id " +
                         "from film_mark common_mark " +
                         "where common_mark.user_id in (?, other_user_mark.user_id)" +
-                        "and common_mark.mark > 5" +
+                        "and common_mark.mark > 5.5 " +
                         "group by common_mark.film_id " +
                         "having count(1) > 1)) recommended_films " +
                         "join films f on recommended_films.film_id = f.id" +
-                        "having avg(recommended_films.mark) > 5" +
+                        "having avg(recommended_films.mark) > 5.5" +
                         "order by avg(recommended_films.mark) desc",
                 this::mapper, userId, userId, userId);
     }
