@@ -218,8 +218,7 @@ public class DbFilmStorage implements FilmStorage {
                         "group by common_mark.film_id " +
                         "having count(1) > 1)) recommended_films " +
                         "join films f on recommended_films.film_id = f.id" +
-                        "having avg(recommended_films.mark) > 5.5" +
-                        "order by avg(recommended_films.mark) desc",
+                        "order by avg(film_mark.mark) desc",
                 this::mapper, userId, userId, userId);
     }
 
