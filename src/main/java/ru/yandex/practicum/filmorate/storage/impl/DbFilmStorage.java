@@ -146,7 +146,6 @@ public class DbFilmStorage implements FilmStorage {
         return jdbcTemplate.query("select f.*, count(1) cnt " +
                 "from films f join film_mark fm on f.id = fm.film_id " +
                 "where fm.user_id in (?, ?) " +
-                "where fm.mark > 5 " +
                 "group by f.id " +
                 "having cnt > 1", this::mapper, userId, friendId);
     }
@@ -205,16 +204,21 @@ public class DbFilmStorage implements FilmStorage {
     public List<Film> getRecommendations(long userId) {
         return jdbcTemplate.query("select f.* " +
                         "from " +
-                        "(select fl_other_users.film_id " +
-                        "from film_like fl_other_users " +
-                        "where fl_other_users.user_id <> ? " +
-                        "and fl_other_users.film_id not in (select fl.film_id " +
-                        "FROM film_like fl " +
-                        "where fl.user_id in (?, fl_other_users.user_id) " +
-                        "group by fl.film_id " +
-                        "having count(1) > 1)) recommend_films " +
-                        "join films f on recommend_films.film_id = f.id",
-                this::mapper, userId, userId);
+                        "(select other_user_mark.film_id " +
+                        "from film_mark other_user_mark " +
+                        "where other_user_mark.user_id <> ? " +
+                        "and other_user_mark.mark > 5 " +
+                        "and other_user_mark.film_id not in (select fm.film_id " +
+                        "from film_mark fm " +
+                        "where fm.user_id = ?) " +
+                        "and other_user_mark.user_id in (select common_mark.user_id " +
+                        "from film_mark common_mark " +
+                        "where common_mark.user_id in (?, other_user_mark.user_id)" +
+                        "and common_mark.mark > 5" +
+                        "group by common_mark.film_id " +
+                        "having count(1) > 1)) recommended_films " +
+                        "join films f on recommended_films.film_id = f.id",
+                this::mapper, userId, userId, userId);
     }
 
     @Override
